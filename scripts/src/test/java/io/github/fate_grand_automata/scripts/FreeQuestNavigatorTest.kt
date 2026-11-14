@@ -91,6 +91,25 @@ class FreeQuestNavigatorTest {
     }
 
     @Test
+    fun apWaitAndQuestSelectionRetriesDoNotCountAsCompletedBattles() {
+        val navigator = FreeQuestNavigator(api, screen)
+        navigator.menu()
+        navigator.menu()
+        panelOpen = true
+        repeat(8) {
+            assertTrue(navigator.menu())
+            navigator.navigationResumed()
+        }
+        repeat(6) {
+            assertTrue(navigator.menu())
+            navigator.battleStarted()
+            navigator.result()
+        }
+        val exit = assertFailsWith<AutoBattle.BattleExitException> { navigator.menu() }
+        assertIs<AutoBattle.ExitReason.FreeQuestNavigationFailed>(exit.reason)
+    }
+
+    @Test
     fun giftAndMissionCountersAreExcludedButBottomMapNodesRemainEligible() {
         assertFalse(freeLocations.isMapBadge(Region(800, 1250, 60, 60)))
         assertFalse(freeLocations.isMapBadge(Region(800, 1080, 60, 60)))

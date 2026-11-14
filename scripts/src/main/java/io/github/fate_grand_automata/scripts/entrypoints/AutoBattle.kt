@@ -186,7 +186,7 @@ class AutoBattle @Inject constructor(
         val screens: Map<() -> Boolean, () -> Unit> = mapOf(
             { connectionRetry.needsToRetry() } to { connectionRetry.retry() },
             { battle.isIdle() } to {
-                if (isFreeQuest) freeQuest.battleStarted()
+                if (isFreeQuest && !isInBattle) freeQuest.battleStarted()
                 storySkipPossible = false
                 isInBattle = true
                 battle.performBattle()
@@ -223,8 +223,8 @@ class AutoBattle @Inject constructor(
             }
 
             if (actor != null) {
-                lastRecognizedScreen = TimeSource.Monotonic.markNow()
                 actor.invoke()
+                lastRecognizedScreen = TimeSource.Monotonic.markNow()
             } else if (isFreeQuest && !isInBattle && lastRecognizedScreen.elapsedNow() > 90.seconds) {
                 throw BattleExitException(ExitReason.FreeQuestNavigationFailed)
             }
@@ -565,5 +565,6 @@ class AutoBattle @Inject constructor(
         }
 
         refill.refill()
+        if (isFreeQuest) freeQuest.navigationResumed()
     }
 }

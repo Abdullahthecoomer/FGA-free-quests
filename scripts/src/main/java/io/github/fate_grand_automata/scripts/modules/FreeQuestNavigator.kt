@@ -35,7 +35,6 @@ class FreeQuestNavigator @Inject constructor(
             }
             // Never start farming from a panel that was not opened by our map scan.
             if (selectedNode == null || battlesAtNode >= 6) stalled()
-            battlesAtNode++
             nodeClickAttempts = 0
             return true
         }
@@ -103,7 +102,12 @@ class FreeQuestNavigator @Inject constructor(
     }
 
     fun battleStarted() {
+        battlesAtNode++
         // Battle duration does not consume the navigation timeout.
+        navigationResumed()
+    }
+
+    fun navigationResumed() {
         navigationStarted = TimeSource.Monotonic.markNow()
     }
 
