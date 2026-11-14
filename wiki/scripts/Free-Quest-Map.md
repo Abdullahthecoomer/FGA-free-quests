@@ -15,8 +15,12 @@ It stays in the currently open map; it does not switch chapters or handle event 
    selects an orange notification counter and runs the first quest in that node.
    The first quest must be the uncleared Free Quest.
 5. It repeats that quest until FGA recognizes the first-clear reward popup, accepts it,
-   rejects any repeat prompt, closes the panel and pinches out again. It stops after
-   three recognized map scans contain no eligible notification badges.
+   rejects any repeat prompt, closes the panel and pinches out again. Each reset uses
+   one zoom gesture. After three empty scans of a view, it starts searching outside
+   that view: it drags to the top-left edge, then sweeps back and forth in overlapping
+   rows toward the bottom edge. Every moved view is scanned before another swipe.
+   A newly found badge immediately resumes quest clearing. It stops only after the
+   sweep reaches the bottom edge without finding another badge.
 
 The existing “stop on first-clear rewards” setting is ignored in this mode. Other battle
 stop conditions, including refill limits and inventory-full checks, remain active.
@@ -24,9 +28,13 @@ Result screens advance one tap at a time so the reward popup can be detected.
 
 This build has not been validated in a live FGO session. Map badge recognition uses
 orange color, circular shape, white border and white digits; navigation also requires a
-recognized blue Free Quest map marker. Badges obscured by the game's HUD or clipped at
-the screen edge may need manual map adjustment. A failure to recognize the map is an
-error, not a successful map clear. Repeated navigation failures or six runs without a
+recognized blue Free Quest map marker to begin navigation. Once a sweep starts, views
+containing only terrain can be searched too. Settled terrain samples determine when a
+swipe has reached a map edge; marker blinking alone does not count as movement. A sweep
+that exceeds 80 swipes stops with a navigation error rather than reporting completion.
+Badges permanently obscured by the game's HUD may still need manual map adjustment.
+A failure to recognize the initial map is an error, not a successful map clear.
+Repeated navigation failures or six runs without a
 recognized first-clear reward stop the script for inspection. Do not start on a map
 with unfinished main story, interludes or other quests above the intended Free Quest.
 

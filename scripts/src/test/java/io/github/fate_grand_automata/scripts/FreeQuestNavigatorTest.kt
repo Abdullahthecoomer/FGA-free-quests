@@ -7,6 +7,7 @@ import io.github.fate_grand_automata.scripts.locations.IScriptAreaTransforms
 import io.github.fate_grand_automata.scripts.locations.Locations
 import io.github.fate_grand_automata.scripts.modules.FreeQuestMapScreen
 import io.github.fate_grand_automata.scripts.modules.FreeQuestNavigator
+import io.github.fate_grand_automata.scripts.models.MapPanDirection
 import io.github.lib_automata.Location
 import io.github.lib_automata.Pattern
 import io.github.lib_automata.Region
@@ -57,14 +58,59 @@ class FreeQuestNavigatorTest {
     }
 
     @Test
-    fun emptyMapNeedsThreeConfirmedScansAfterZoomingOut() {
+    fun emptyMapRequiresOneZoomAndAnEntireSweepBeforeStopping() {
         val navigator = FreeQuestNavigator(api, screen)
         badges = emptyList()
         assertFalse(navigator.menu()) // normalize zoom
-        verify(exactly = 3) { screen.zoomOut() }
+        verify(exactly = 1) { screen.zoomOut() }
         repeat(2) { assertFalse(navigator.menu()) }
+        verify(exactly = 0) { screen.pan(any()) }
+        repeat(3) { assertFalse(navigator.menu()) }
         val exit = assertFailsWith<AutoBattle.BattleExitException> { navigator.menu() }
         assertIs<AutoBattle.ExitReason.FreeQuestComplete>(exit.reason)
+        verify(exactly = 1) { screen.pan(MapPanDirection.Right) }
+        verify(exactly = 1) { screen.pan(MapPanDirection.Down) }
+        verify(exactly = 1) { screen.pan(MapPanDirection.Left) }
+        verify(exactly = 1) { screen.pan(MapPanDirection.Up) }
+    }
+
+    @Test
+    fun sweepFindsAnOffscreenQuestEvenWhenIntermediateViewsHaveNoBlueMarkers() {
+        val navigator = FreeQuestNavigator(api, screen)
+        var x = 1
+        var y = 1
+        val target = Region(1500, 500, 60, 60)
+        every { screen.badges() } answers { if (x == 2 && y == 2) listOf(target) else emptyList() }
+        every { screen.pan(any()) } answers {
+            val previous = x to y
+            when (firstArg<MapPanDirection>()) {
+                MapPanDirection.Right -> x = (x - 1).coerceAtLeast(0)
+                MapPanDirection.Left -> x = (x + 1).coerceAtMost(2)
+                MapPanDirection.Down -> y = (y - 1).coerceAtLeast(0)
+                MapPanDirection.Up -> y = (y + 1).coerceAtMost(2)
+            }
+            mapVisible = false
+            previous != (x to y)
+        }
+        every { with(api) { target.center.click(any()) } } answers { panelOpen = true }
+        repeat(100) { if (!panelOpen) navigator.menu() }
+        assertTrue(panelOpen)
+        assertTrue(navigator.menu())
+        verify(exactly = 1) { with(api) { target.center.click(any()) } }
+    }
+
+    @Test
+    fun everyMovedViewMustBeConfirmedEmptyBeforeAnotherSwipe() {
+        val navigator = FreeQuestNavigator(api, screen)
+        badges = emptyList()
+        every { screen.pan(any()) } returns true
+        navigator.menu()
+        repeat(3) { navigator.menu() }
+        verify(exactly = 1) { screen.pan(any()) }
+        repeat(2) { navigator.menu() }
+        verify(exactly = 1) { screen.pan(any()) }
+        navigator.menu()
+        verify(exactly = 2) { screen.pan(any()) }
     }
 
     @Test

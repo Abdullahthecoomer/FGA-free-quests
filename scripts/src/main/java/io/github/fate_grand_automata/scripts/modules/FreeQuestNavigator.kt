@@ -22,6 +22,7 @@ class FreeQuestNavigator @Inject constructor(
     private var battlesAtNode = 0
     private var nodeClickAttempts = 0
     private var emptyScans = 0
+    private var sweep: FreeQuestMapSweep? = null
     private var navigationStarted = TimeSource.Monotonic.markNow()
 
     /** Returns true only when the quest panel is ready for AutoBattle to select its first quest. */
@@ -39,32 +40,42 @@ class FreeQuestNavigator @Inject constructor(
             return true
         }
 
-        if (!isMap()) return false
+        // A panned map can contain terrain alone, with every blue quest marker outside the view.
+        if (sweep == null && !isMap()) return false
         if (returningToMap) {
-            // Pinching inward is idempotent at minimum zoom; never toggles back into a zoomed map.
-            repeat(3) {
-                screen.zoomOut()
-                1.seconds.wait()
-            }
+            screen.zoomOut()
             returningToMap = false
             selectedNode = null
             battlesAtNode = 0
             emptyScans = 0
+            sweep = null
             2.seconds.wait()
             return false
         }
 
         val badges = screen.badges().filter { locations.freeQuest.isMapBadge(it) }
         if (badges.isEmpty()) {
-            // Only count empty frames after positively recognizing a map, after zoom-out settles.
+            // Confirm this view is empty before moving to another part of the map.
             if (selectedNode != null) stalled()
-            if (++emptyScans >= 3) {
-                throw AutoBattle.BattleExitException(AutoBattle.ExitReason.FreeQuestComplete(completedNodes))
+            if (++emptyScans < 3) {
+                2.seconds.wait()
+                return false
             }
-            2.seconds.wait()
+            val search = sweep ?: FreeQuestMapSweep().also { sweep = it }
+            val moved = screen.pan(search.direction)
+            when (search.afterPan(moved)) {
+                FreeQuestMapSweep.Result.Complete ->
+                    throw AutoBattle.BattleExitException(AutoBattle.ExitReason.FreeQuestComplete(completedNodes))
+                FreeQuestMapSweep.Result.LimitReached -> stalled()
+                FreeQuestMapSweep.Result.Continue -> {
+                    if (moved) emptyScans = 0
+                    navigationResumed()
+                }
+            }
             return false
         }
         emptyScans = 0
+        sweep = null
         val previous = selectedNode
         val target = if (previous == null) badges.first().center else {
             badges.minByOrNull { distanceSquared(it.center, previous) }!!.center.also {

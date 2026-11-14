@@ -2,6 +2,7 @@ package io.github.fate_grand_automata.scripts.locations
 
 import io.github.lib_automata.Location
 import io.github.lib_automata.Region
+import io.github.fate_grand_automata.scripts.models.MapPanDirection
 import javax.inject.Inject
 
 class FreeQuestLocations @Inject constructor(
@@ -19,6 +20,20 @@ class FreeQuestLocations @Inject constructor(
     val zoomFirstEnd = Location(-100, 700).xFromCenter()
     val zoomSecondStart = Location(700, 700).xFromCenter()
     val zoomSecondEnd = Location(100, 700).xFromCenter()
+
+    val motionRegion = Region(-900, 250, 1800, 750).xFromCenter()
+    private val horizontalPanDistance = (scriptArea.width * if (canLongSwipe) 0.55 else 0.35).toInt()
+    private val panLeft = Location(-horizontalPanDistance / 2, 700).xFromCenter()
+    private val panRight = Location(horizontalPanDistance / 2, 700).xFromCenter()
+    private val panTop = Location(0, if (canLongSwipe) 350 else 550).xFromCenter()
+    private val panBottom = Location(0, 1000).xFromCenter()
+
+    fun panGesture(direction: MapPanDirection): Pair<Location, Location> = when (direction) {
+        MapPanDirection.Left -> panRight to panLeft
+        MapPanDirection.Right -> panLeft to panRight
+        MapPanDirection.Up -> panBottom to panTop
+        MapPanDirection.Down -> panTop to panBottom
+    }
 
     fun isMapBadge(badge: Region) =
         listOf(statusRegion, menuRegion, headerRegion).none { hud ->
