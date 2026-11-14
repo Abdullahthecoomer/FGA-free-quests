@@ -35,6 +35,6 @@ Templates `free_quest_close_panel.png` and `free_quest_map_marker.png` are cropp
 from `docs/reference-images/En/battle-result/repeat-quest.png`. Those existing reference
 screenshots are 720p. Map marker matching tries several sizes to cover map zoom levels.
 
-Builds use the upstream **PR Build** GitHub Actions workflow (`workflow_dispatch` on
-the `free-quest-mode` branch). It runs unit tests and `assembleCi`; the APK uses the
+Builds use the custom **Free Quest APK** GitHub Actions workflow (push or
+`workflow_dispatch` on the `free-quest-mode` branch). It runs unit tests and `assembleCi`; the APK uses the
 project's CI signing key and application ID `io.github.fate_grand_automata.freequests`.

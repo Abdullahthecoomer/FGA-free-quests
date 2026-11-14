@@ -44,6 +44,7 @@ class FreeQuestNavigatorTest {
     private var badges = listOf(Region(1500, 500, 60, 60))
 
     init {
+        every { api.useSameSnapIn<Boolean>(any()) } answers { firstArg<() -> Boolean>()() }
         every { api.locations } returns locations
         every { api.images[Images.FreeQuestClosePanel] } returns close
         every { api.images[Images.FreeQuestMapMarker] } returns marker
@@ -92,6 +93,7 @@ class FreeQuestNavigatorTest {
     @Test
     fun giftAndMissionCountersAreExcludedButBottomMapNodesRemainEligible() {
         assertFalse(freeLocations.isMapBadge(Region(800, 1250, 60, 60)))
+        assertFalse(freeLocations.isMapBadge(Region(800, 1080, 60, 60)))
         assertTrue(freeLocations.isMapBadge(Region(1700, 1300, 60, 60)))
     }
 }

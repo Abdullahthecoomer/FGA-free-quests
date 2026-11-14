@@ -82,9 +82,10 @@ class FreeQuestNavigator @Inject constructor(
     private fun distanceSquared(a: Location, b: Location): Int =
         (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
 
-    private fun isMap(): Boolean {
+    private fun isMap(): Boolean = useSameSnapIn {
         val marker = images[Images.FreeQuestMapMarker]
-        return listOf(0.55, 0.65, 0.75, 0.85, 1.0).any { scale ->
+        (20..40).any { step ->
+            val scale = step / 40.0
             marker.resize(Size((marker.width * scale).toInt(), (marker.height * scale).toInt())).use {
                 locations.freeQuest.mapRegion.exists(it)
             }

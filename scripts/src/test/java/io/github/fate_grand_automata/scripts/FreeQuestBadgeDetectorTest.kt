@@ -3,6 +3,8 @@ package io.github.fate_grand_automata.scripts
 import io.github.fate_grand_automata.scripts.modules.FreeQuestBadgeDetector
 import java.awt.Color
 import java.awt.image.BufferedImage
+import java.awt.RenderingHints
+import java.awt.geom.AffineTransform
 import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,10 +18,20 @@ class FreeQuestBadgeDetectorTest {
     @Test
     fun detectsCounterFromGameScreenshot() {
         val image = ImageIO.read(javaClass.getResource("/free-quests/badge-jp-map.png"))
-        val badges = detect(image)
-        assertEquals(1, badges.size)
-        assertTrue(badges.single().center.x in 36..46)
-        assertTrue(badges.single().center.y in 36..46)
+        for (scale in listOf(0.65, 0.8, 1.0)) {
+            for (offset in listOf(0.0, 0.5)) {
+                val resized = BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB)
+                val g = resized.createGraphics()
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+                g.drawImage(image, AffineTransform(scale, 0.0, 0.0, scale, offset, offset), null)
+                g.dispose()
+                val badges = detect(resized)
+                assertEquals(1, badges.size, "scale=$scale offset=$offset")
+                val expectedCenter = (41 * scale + offset).toInt()
+                assertTrue(badges.single().center.x in expectedCenter - 4..expectedCenter + 4)
+                assertTrue(badges.single().center.y in expectedCenter - 4..expectedCenter + 4)
+            }
+        }
     }
 
     private fun counter(diameter: Int, digit: String, ring: Boolean = true): BufferedImage {

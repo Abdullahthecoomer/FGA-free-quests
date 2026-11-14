@@ -68,7 +68,8 @@ object FreeQuestBadgeDetector {
             val cy = (top + bottom) / 2.0
             val ringSamples = (0 until 24).count { sample ->
                 val angle = sample * Math.PI / 12
-                (0..3).any { offset ->
+                // Shading can shrink the orange component several pixels inside the white rim.
+                (0..5).any { offset ->
                     white(
                         (cx + (w / 2.0 + offset) * cos(angle)).roundToInt(),
                         (cy + (h / 2.0 + offset) * sin(angle)).roundToInt()

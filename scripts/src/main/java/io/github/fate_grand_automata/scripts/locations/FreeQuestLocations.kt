@@ -21,5 +21,7 @@ class FreeQuestLocations @Inject constructor(
     val zoomSecondEnd = Location(100, 700).xFromCenter()
 
     fun isMapBadge(badge: Region) =
-        badge !in statusRegion && badge !in menuRegion && badge !in headerRegion
+        listOf(statusRegion, menuRegion, headerRegion).none { hud ->
+            badge.center.x in hud.x until hud.right && badge.center.y in hud.y until hud.bottom
+        }
 }
