@@ -1,0 +1,46 @@
+name: Free Quest APK
+
+on:
+  push:
+    branches: [free-quest-mode]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: free-quest-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC"'
+  FGA_VERSION_CODE: ${{ github.run_number }}
+  FGA_VERSION_NAME: freequests-${{ github.run_number }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.1.0
+        with:
+          java-version: '21'
+          distribution: temurin
+      - uses: gradle/actions/setup-gradle@v6.4.0
+      - name: Run unit tests
+        run: ./gradlew test --parallel
+      - name: Build APK
+        run: ./gradlew assembleCi --parallel
+      - name: Upload APK
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: FGA-Free-Quests-${{ github.run_number }}
+          path: app/build/outputs/apk/ci/app-ci.apk
+          if-no-files-found: error
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: test-reports-${{ github.run_number }}
+          path: '**/build/reports/tests/'
+          if-no-files-found: ignore
