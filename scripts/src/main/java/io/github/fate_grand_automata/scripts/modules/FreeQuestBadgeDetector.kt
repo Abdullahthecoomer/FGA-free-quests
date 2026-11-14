@@ -30,6 +30,15 @@ object FreeQuestBadgeDetector {
             return minOf(r, g, b) >= 195 && maxOf(r, g, b) - minOf(r, g, b) <= 45
         }
 
+        fun digit(x: Int, y: Int): Boolean {
+            val color = pixels[y * width + x]
+            val r = (color shr 16) and 255
+            val g = (color shr 8) and 255
+            val b = color and 255
+            // Antialiasing blends the thin white number into its orange background.
+            return r >= 210 && g >= 195 && b >= 160 && maxOf(r, g, b) - minOf(r, g, b) <= 85
+        }
+
         for (seed in pixels.indices) {
             if (visited[seed] || !orange(seed)) continue
             var head = 0
@@ -79,7 +88,7 @@ object FreeQuestBadgeDetector {
             if (ringSamples < 17) continue
             // A counter has a white digit as well as a white border.
             val hasDigit = (top + h / 4..bottom - h / 4).any { y ->
-                (left + w / 4..right - w / 4).any { x -> white(x, y) }
+                (left + w / 4..right - w / 4).any { x -> digit(x, y) }
             }
             if (hasDigit) badges += Region(left, top, w, h)
         }
