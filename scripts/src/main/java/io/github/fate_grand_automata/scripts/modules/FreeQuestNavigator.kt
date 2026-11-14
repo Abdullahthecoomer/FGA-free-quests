@@ -23,6 +23,7 @@ class FreeQuestNavigator @Inject constructor(
     private var nodeClickAttempts = 0
     private var emptyScans = 0
     private var sweep: FreeQuestMapSweep? = null
+    private var mapConfirmed = false
     private var navigationStarted = TimeSource.Monotonic.markNow()
 
     /** Returns true only when the quest panel is ready for AutoBattle to select its first quest. */
@@ -40,8 +41,11 @@ class FreeQuestNavigator @Inject constructor(
             return true
         }
 
-        // A panned map can contain terrain alone, with every blue quest marker outside the view.
-        if (sweep == null && !isMap()) return false
+        // Zooming or panning can put every blue quest marker outside the view.
+        if (!mapConfirmed) {
+            if (!isMap()) return false
+            mapConfirmed = true
+        }
         if (returningToMap) {
             screen.zoomOut()
             returningToMap = false
@@ -94,12 +98,13 @@ class FreeQuestNavigator @Inject constructor(
 
     private fun isMap(): Boolean = useSameSnapIn {
         val marker = images[Images.FreeQuestMapMarker]
-        (20..40).any { step ->
+        val hasMarker = (20..40).any { step ->
             val scale = step / 40.0
             marker.resize(Size((marker.width * scale).toInt(), (marker.height * scale).toInt())).use {
                 locations.freeQuest.mapRegion.exists(it)
             }
         }
+        hasMarker || locations.freeQuest.headerRegion.detectText().contains("Terminal", ignoreCase = true)
     }
 
     fun reward(): Boolean {

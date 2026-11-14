@@ -114,6 +114,18 @@ class FreeQuestNavigatorTest {
     }
 
     @Test
+    fun terminalButtonConfirmsAMapWithAllQuestMarkersOutsideTheInitialView() {
+        val navigator = FreeQuestNavigator(api, screen)
+        mapVisible = false
+        badges = emptyList()
+        every { with(api) { freeLocations.headerRegion.detectText(any()) } } returns "TERMINAL"
+        navigator.menu()
+        repeat(3) { navigator.menu() }
+        verify(exactly = 1) { screen.zoomOut() }
+        verify(exactly = 1) { screen.pan(MapPanDirection.Right) }
+    }
+
+    @Test
     fun unrecognizedScreenNeverCountsAsEmptyMap() {
         val navigator = FreeQuestNavigator(api, screen)
         mapVisible = false

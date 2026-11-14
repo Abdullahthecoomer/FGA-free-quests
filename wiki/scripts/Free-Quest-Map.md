@@ -28,8 +28,9 @@ Result screens advance one tap at a time so the reward popup can be detected.
 
 This build has not been validated in a live FGO session. Map badge recognition uses
 orange color, circular shape, white border and white digits; navigation also requires a
-recognized blue Free Quest map marker to begin navigation. Once a sweep starts, views
-containing only terrain can be searched too. Settled terrain samples determine when a
+recognized blue Free Quest map marker or the NA Terminal button to begin navigation.
+Once the map is confirmed, zoomed or panned views containing only terrain can be
+searched too. Settled terrain samples determine when a
 swipe has reached a map edge; marker blinking alone does not count as movement. A sweep
 that exceeds 80 swipes stops with a navigation error rather than reporting completion.
 Badges permanently obscured by the game's HUD may still need manual map adjustment.
