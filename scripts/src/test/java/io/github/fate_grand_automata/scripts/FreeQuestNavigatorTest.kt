@@ -24,7 +24,7 @@ class FreeQuestNavigatorTest {
     private val transforms = object : IScriptAreaTransforms {
         override val scriptArea = Region(0, 0, 2880, 1440)
         override val isWide = true
-        override val gameServer = GameServer.En()
+        override val gameServer = GameServer.En.Original
         override val canLongSwipe = true
         override fun Location.xFromCenter() = this + Location(1440, 0)
         override fun Region.xFromCenter() = this + Location(1440, 0)
