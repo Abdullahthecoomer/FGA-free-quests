@@ -32,7 +32,7 @@ fun ScriptLauncher(
             val modifier = Modifier.weight(1f)
 
             val responseBuilder = when (scriptMode) {
-                ScriptModeEnum.Battle, ScriptModeEnum.SupportImageMaker ->
+                ScriptModeEnum.Battle, ScriptModeEnum.FreeQuest, ScriptModeEnum.SupportImageMaker ->
                     battleLauncher(prefs, modifier)
 
                 ScriptModeEnum.FP -> fpLauncher(prefs, modifier)

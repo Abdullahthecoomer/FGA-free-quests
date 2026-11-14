@@ -15,6 +15,7 @@ sealed class ScriptLauncherResponse {
     data class CEBomb(val targetRarity: Int) : ScriptLauncherResponse()
     data object SupportImageMaker : ScriptLauncherResponse()
     data object Battle : ScriptLauncherResponse()
+    data object FreeQuest : ScriptLauncherResponse()
 
     data object ServantEnhancement : ScriptLauncherResponse()
 }

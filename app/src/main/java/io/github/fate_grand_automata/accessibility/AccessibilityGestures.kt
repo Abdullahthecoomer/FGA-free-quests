@@ -144,10 +144,18 @@ class AccessibilityGestures @Inject constructor(
         wait(gesturePrefs.clickWaitTime)
     }
 
-    private suspend fun performGesture(StrokeDesc: GestureDescription.StrokeDescription): Boolean = suspendCancellableCoroutine {
-        val gestureDesc = GestureDescription.Builder()
-            .addStroke(StrokeDesc)
-            .build()
+    override fun pinch(firstStart: Location, firstEnd: Location, secondStart: Location, secondEnd: Location) = runBlocking {
+        val duration = maxOf(500L, gesturePrefs.swipeDuration.inWholeMilliseconds)
+        val first = GestureDescription.StrokeDescription(Path().moveTo(firstStart).lineTo(firstEnd), 0, duration)
+        val second = GestureDescription.StrokeDescription(Path().moveTo(secondStart).lineTo(secondEnd), 0, duration)
+        check(performGesture(first, second)) { "Map zoom gesture was cancelled" }
+        wait(gesturePrefs.swipeWaitTime)
+    }
+
+    private suspend fun performGesture(vararg strokes: GestureDescription.StrokeDescription): Boolean = suspendCancellableCoroutine {
+        val builder = GestureDescription.Builder()
+        strokes.forEach { builder.addStroke(it) }
+        val gestureDesc = builder.build()
 
         val callback = object : AccessibilityService.GestureResultCallback() {
             override fun onCompleted(gestureDescription: GestureDescription?) {

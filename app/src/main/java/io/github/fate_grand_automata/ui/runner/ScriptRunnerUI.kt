@@ -68,7 +68,7 @@ fun ScriptRunnerUI(
                 color = when (state) {
                     ScriptRunnerUIState.Running ->
                         MaterialTheme.colorScheme.surface.copy(
-                            alpha = if (hidePlayButton && script == ScriptModeEnum.Battle) 0f else 0.5f
+                            alpha = if (hidePlayButton && (script == ScriptModeEnum.Battle || script == ScriptModeEnum.FreeQuest)) 0f else 0.5f
                         )
                     else -> MaterialTheme.colorScheme.surface
                 },
@@ -76,7 +76,7 @@ fun ScriptRunnerUI(
                     ScriptRunnerUIState.Running -> {
                         val color = if (isRecording) MaterialTheme.colorScheme.error else Color.White
                         color.copy(
-                            alpha = if (hidePlayButton && script == ScriptModeEnum.Battle) 0f else 0.5f
+                            alpha = if (hidePlayButton && (script == ScriptModeEnum.Battle || script == ScriptModeEnum.FreeQuest)) 0f else 0.5f
                         )
                     }
                     else -> Color.White
@@ -97,7 +97,7 @@ fun ScriptRunnerUI(
             ) {
                 BadgedBox(
                     badge = {
-                        if (script == ScriptModeEnum.Battle && state == ScriptRunnerUIState.Running) {
+                        if ((script == ScriptModeEnum.Battle || script == ScriptModeEnum.FreeQuest) && state == ScriptRunnerUIState.Running) {
                             Badge(
                                 containerColor = Color.Transparent,
                                 contentColor = Color(0xFFA6EEFF),

@@ -283,7 +283,7 @@ class ScriptManager @Inject constructor(
 
     private fun getEntryPoint(entryPoint: ScriptEntryPoint): EntryPoint =
         when (preferences.scriptMode) {
-            ScriptModeEnum.Battle -> entryPoint.battle()
+            ScriptModeEnum.Battle, ScriptModeEnum.FreeQuest -> entryPoint.battle()
             ScriptModeEnum.FP -> entryPoint.fp()
             ScriptModeEnum.Lottery -> entryPoint.lottery()
             ScriptModeEnum.PresentBox -> entryPoint.giftBox()

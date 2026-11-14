@@ -131,7 +131,7 @@ android {
         }
         create("ci") {
             initWith(getByName("release"))
-            applicationIdSuffix = ".debug"
+            applicationIdSuffix = ".freequests"
             signingConfig = signingConfigs.getByName("debug")
 
             ndk {

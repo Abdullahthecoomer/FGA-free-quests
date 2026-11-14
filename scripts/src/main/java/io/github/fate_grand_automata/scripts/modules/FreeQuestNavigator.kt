@@ -1,0 +1,123 @@
+package io.github.fate_grand_automata.scripts.modules
+
+import io.github.fate_grand_automata.scripts.IFgoAutomataApi
+import io.github.fate_grand_automata.scripts.Images
+import io.github.fate_grand_automata.scripts.entrypoints.AutoBattle
+import io.github.lib_automata.Location
+import io.github.lib_automata.Size
+import io.github.lib_automata.dagger.ScriptScope
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
+
+@ScriptScope
+class FreeQuestNavigator @Inject constructor(
+    api: IFgoAutomataApi,
+    private val screen: FreeQuestMapScreen
+) : IFgoAutomataApi by api {
+    var completedNodes = 0
+        private set
+    private var returningToMap = true
+    private var selectedNode: Location? = null
+    private var battlesAtNode = 0
+    private var nodeClickAttempts = 0
+    private var emptyScans = 0
+    private var navigationStarted = TimeSource.Monotonic.markNow()
+
+    /** Returns true only when the quest panel is ready for AutoBattle to select its first quest. */
+    fun menu(): Boolean {
+        if (navigationStarted.elapsedNow() > 90.seconds) stalled()
+        if (images[Images.FreeQuestClosePanel] in locations.freeQuest.closePanelRegion) {
+            if (returningToMap) {
+                locations.freeQuest.closePanelClick.click()
+                2.seconds.wait()
+                return false
+            }
+            // Never start farming from a panel that was not opened by our map scan.
+            if (selectedNode == null || battlesAtNode >= 6) stalled()
+            battlesAtNode++
+            nodeClickAttempts = 0
+            return true
+        }
+
+        if (!isMap()) return false
+        if (returningToMap) {
+            // Pinching inward is idempotent at minimum zoom; never toggles back into a zoomed map.
+            repeat(3) {
+                screen.zoomOut()
+                1.seconds.wait()
+            }
+            returningToMap = false
+            selectedNode = null
+            battlesAtNode = 0
+            emptyScans = 0
+            2.seconds.wait()
+            return false
+        }
+
+        val badges = screen.badges().filter { locations.freeQuest.isMapBadge(it) }
+        if (badges.isEmpty()) {
+            // Only count empty frames after positively recognizing a map, after zoom-out settles.
+            if (selectedNode != null) stalled()
+            if (++emptyScans >= 3) {
+                throw AutoBattle.BattleExitException(AutoBattle.ExitReason.FreeQuestComplete(completedNodes))
+            }
+            2.seconds.wait()
+            return false
+        }
+        emptyScans = 0
+        val previous = selectedNode
+        val target = if (previous == null) badges.first().center else {
+            badges.minByOrNull { distanceSquared(it.center, previous) }!!.center.also {
+                if (distanceSquared(it, previous) > 250 * 250) stalled()
+            }
+        }
+        if (++nodeClickAttempts > 3) stalled()
+        selectedNode = target
+        target.click()
+        2.seconds.wait()
+        return false
+    }
+
+    private fun distanceSquared(a: Location, b: Location): Int =
+        (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
+
+    private fun isMap(): Boolean {
+        val marker = images[Images.FreeQuestMapMarker]
+        return listOf(0.55, 0.65, 0.75, 0.85, 1.0).any { scale ->
+            marker.resize(Size((marker.width * scale).toInt(), (marker.height * scale).toInt())).use {
+                locations.freeQuest.mapRegion.exists(it)
+            }
+        }
+    }
+
+    fun reward(): Boolean {
+        if (selectedNode != null && !returningToMap) {
+            completedNodes++
+            returningToMap = true
+            navigationStarted = TimeSource.Monotonic.markNow()
+            return true
+        }
+        return false
+    }
+
+    fun battleStarted() {
+        // Battle duration does not consume the navigation timeout.
+        navigationStarted = TimeSource.Monotonic.markNow()
+    }
+
+    fun result() {
+        navigationStarted = TimeSource.Monotonic.markNow()
+    }
+
+    fun closeRepeat() {
+        if (navigationStarted.elapsedNow() > 90.seconds) stalled()
+        val close = locations.freeQuest.repeatCloseRegion.find(images[Images.FreeQuestRepeatClose])
+            ?: return
+        close.region.click()
+        2.seconds.wait()
+    }
+
+    private fun stalled(): Nothing =
+        throw AutoBattle.BattleExitException(AutoBattle.ExitReason.FreeQuestNavigationFailed)
+}

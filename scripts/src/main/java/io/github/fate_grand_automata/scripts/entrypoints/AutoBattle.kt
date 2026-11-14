@@ -6,6 +6,7 @@ import io.github.fate_grand_automata.scripts.ScriptNotify
 import io.github.fate_grand_automata.scripts.enums.GameServer
 import io.github.fate_grand_automata.scripts.enums.GameServers
 import io.github.fate_grand_automata.scripts.enums.MaterialEnum
+import io.github.fate_grand_automata.scripts.enums.ScriptModeEnum
 import io.github.fate_grand_automata.scripts.models.BoostItem
 import io.github.fate_grand_automata.scripts.models.FieldSlot
 import io.github.fate_grand_automata.scripts.models.battle.BattleState
@@ -18,6 +19,7 @@ import io.github.fate_grand_automata.scripts.modules.Refill
 import io.github.fate_grand_automata.scripts.modules.ScreenshotDrops
 import io.github.fate_grand_automata.scripts.modules.Support
 import io.github.fate_grand_automata.scripts.modules.Withdraw
+import io.github.fate_grand_automata.scripts.modules.FreeQuestNavigator
 import io.github.fate_grand_automata.scripts.prefs.IPreferences
 import io.github.lib_automata.EntryPoint
 import io.github.lib_automata.ExitManager
@@ -27,6 +29,7 @@ import io.github.lib_automata.dagger.ScriptScope
 import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 /**
  * Checks if Support Selection menu is up
@@ -56,7 +59,8 @@ class AutoBattle @Inject constructor(
     private val connectionRetry: ConnectionRetry,
     private val refill: Refill,
     private val matTracker: MaterialsTracker,
-    private val ceDropsTracker: CEDropsTracker
+    private val ceDropsTracker: CEDropsTracker,
+    private val freeQuest: FreeQuestNavigator
 ) : EntryPoint(exitManager), IFgoAutomataApi by api {
     sealed class ExitReason(val cause: Exception? = null) {
         data object Abort : ExitReason()
@@ -64,6 +68,8 @@ class AutoBattle @Inject constructor(
         data object CEGet : ExitReason()
         class LimitCEs(val count: Int) : ExitReason()
         data object FirstClearRewards : ExitReason()
+        class FreeQuestComplete(val count: Int) : ExitReason()
+        data object FreeQuestNavigationFailed : ExitReason()
         class LimitMaterials(val count: Int) : ExitReason()
         data object WithdrawDisabled : ExitReason()
         data object APRanOut : ExitReason()
@@ -83,6 +89,7 @@ class AutoBattle @Inject constructor(
     class ExitException(val reason: ExitReason, val state: ExitState) : Exception(reason.cause)
 
     private var isContinuing = false
+    private val isFreeQuest get() = prefs.scriptMode == ScriptModeEnum.FreeQuest
 
     // for tracking whether the story skip button could be visible in the current screen
     private var storySkipPossible = true
@@ -179,6 +186,7 @@ class AutoBattle @Inject constructor(
         val screens: Map<() -> Boolean, () -> Unit> = mapOf(
             { connectionRetry.needsToRetry() } to { connectionRetry.retry() },
             { battle.isIdle() } to {
+                if (isFreeQuest) freeQuest.battleStarted()
                 storySkipPossible = false
                 isInBattle = true
                 battle.performBattle()
@@ -204,6 +212,7 @@ class AutoBattle @Inject constructor(
         )
 
         // Loop through SCREENS until a Validator returns true
+        var lastRecognizedScreen = TimeSource.Monotonic.markNow()
         while (true) {
             val actor = useSameSnapIn {
                 screens
@@ -213,7 +222,12 @@ class AutoBattle @Inject constructor(
                     .firstOrNull()
             }
 
-            actor?.invoke()
+            if (actor != null) {
+                lastRecognizedScreen = TimeSource.Monotonic.markNow()
+                actor.invoke()
+            } else if (isFreeQuest && !isInBattle && lastRecognizedScreen.elapsedNow() > 90.seconds) {
+                throw BattleExitException(ExitReason.FreeQuestNavigationFailed)
+            }
 
             0.5.seconds.wait()
         }
@@ -228,6 +242,7 @@ class AutoBattle @Inject constructor(
      * Resets the battle state, clicks on the quest and refills the AP if needed.
      */
     private fun menu() {
+        if (isFreeQuest && !freeQuest.menu()) return
         // In case the repeat loop breaks and we end up in menu (like withdrawing from quests)
         isContinuing = false
 
@@ -322,8 +337,9 @@ class AutoBattle @Inject constructor(
      */
     private fun result() {
         isInBattle = false
+        if (isFreeQuest) freeQuest.result()
         locations.resultClick.click(
-            times = if (prefs.screenshotBond) 5 else 15
+            times = if (isFreeQuest) 1 else if (prefs.screenshotBond) 5 else 15
         )
         storySkipPossible = true
     }
@@ -370,6 +386,10 @@ class AutoBattle @Inject constructor(
     private fun isRepeatScreen() = findRepeatButton() != null
 
     private fun repeatQuest() {
+        if (isFreeQuest) {
+            freeQuest.closeRepeat()
+            return
+        }
         // Needed to show we don't need to enter the "StartQuest" function
         isContinuing = true
         storySkipPossible = false
@@ -419,6 +439,13 @@ class AutoBattle @Inject constructor(
      * Handles the quest rewards screen.
      */
     private fun questReward() {
+        if (isFreeQuest) {
+            val firstRewardFrame = freeQuest.reward()
+            locations.resultClick.click()
+            locations.resultQuestRewardRegion.waitVanish(images[Images.QuestReward], 5.seconds)
+            if (firstRewardFrame) battle.resetState()
+            return
+        }
         if (prefs.stopOnFirstClearRewards) {
             // Count the current run
             state.nextRun()

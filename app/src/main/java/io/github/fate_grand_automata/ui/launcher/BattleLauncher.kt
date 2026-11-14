@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.fate_grand_automata.R
 import io.github.fate_grand_automata.scripts.enums.GameServer
+import io.github.fate_grand_automata.scripts.enums.ScriptModeEnum
 import io.github.fate_grand_automata.scripts.enums.RefillResourceEnum
 import io.github.fate_grand_automata.scripts.prefs.IPreferences
 import io.github.fate_grand_automata.ui.Stepper
@@ -70,6 +71,9 @@ fun battleLauncher(
     val configNames = remember(configs) { configs.map { it.name } }
 
     var selectedConfigIndex by remember { mutableIntStateOf(configs.indexOf(prefs.selectedBattleConfig)) }
+    var freeQuestMode by remember {
+        mutableStateOf(prefs.scriptMode == ScriptModeEnum.FreeQuest && prefs.gameServer is GameServer.En)
+    }
 
     val perServerConfigPref by remember {
         mutableStateOf(
@@ -221,6 +225,21 @@ fun battleLauncher(
                 .padding(start = 5.dp),
             state = mainConfigState
         ) {
+            if (prefs.gameServer is GameServer.En) {
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = freeQuestMode, onCheckedChange = { freeQuestMode = it })
+                        Text(stringResource(R.string.free_quest_mode))
+                    }
+                    if (freeQuestMode) {
+                        Text(
+                            stringResource(R.string.free_quest_mode_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+            }
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -383,7 +402,7 @@ fun battleLauncher(
     return ScriptLauncherResponseBuilder(
         canBuild = { selectedConfigIndex != -1 },
         build = {
-            ScriptLauncherResponse.Battle
+            if (freeQuestMode) ScriptLauncherResponse.FreeQuest else ScriptLauncherResponse.Battle
         }
     )
 }

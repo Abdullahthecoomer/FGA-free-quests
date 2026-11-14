@@ -12,6 +12,9 @@ interface GestureService : AutoCloseable {
      */
     fun swipe(start: Location, end: Location)
 
+    /** Moves two fingers simultaneously, in physical screen coordinates. */
+    fun pinch(firstStart: Location, firstEnd: Location, secondStart: Location, secondEnd: Location)
+
     /**
      * Clicks on a given [location].
      *

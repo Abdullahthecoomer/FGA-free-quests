@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="free_quest_mode">Free Quest map clear (experimental)</string>
+    <string name="free_quest_mode_hint">Start on a cleared NA story map. Clears orange-badged nodes with the selected battle profile, then stops when the full map has no badges. Disable run limits to clear the whole map.</string>
+    <string name="free_quest_complete">No uncleared quest badges remain on this map. First-clear rewards collected: %1$d.</string>
+    <string name="free_quest_navigation_failed">Free Quest mode could not safely continue. Check that you started on a cleared NA story map and that the top quest is an uncleared Free Quest. A screen or badge may not have been recognized. Stop here and capture the current screen for troubleshooting.</string>
     <string name="tapper_service_description">"This accessibility service is used to perform clicks and swipes without root. It also enables automatic detection of FGO version (NA/JP/CN/TW/KR) by checking the APK name of the foreground app. In case you see the service malfunctioning, try turning it OFF and then turn ON again. If it still doesn't work, you might have to adjust your device's Battery optimization settings for the app."</string>
     <string name="battle_config_item_copy">"Copy"</string>
     <string name="battle_config_item_delete">"Delete"</string>

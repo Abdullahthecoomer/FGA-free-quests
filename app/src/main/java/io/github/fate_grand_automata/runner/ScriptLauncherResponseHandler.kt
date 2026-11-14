@@ -50,6 +50,7 @@ class ScriptLauncherResponseHandler @Inject constructor(
             is ScriptLauncherResponse.Battle -> {
                 ScriptModeEnum.Battle
             }
+            ScriptLauncherResponse.FreeQuest -> ScriptModeEnum.FreeQuest
 
             is ScriptLauncherResponse.ServantEnhancement -> {
                 ScriptModeEnum.ServantLevel

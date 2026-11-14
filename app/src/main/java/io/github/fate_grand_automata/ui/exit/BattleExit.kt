@@ -75,6 +75,8 @@ private fun AutoBattle.ExitReason.text(): String = when (this) {
     is AutoBattle.ExitReason.SkillCommandParseError -> "AutoSkill Parse error:\n\n${cause?.message}"
     is AutoBattle.ExitReason.CardPriorityParseError -> msg
     AutoBattle.ExitReason.FirstClearRewards -> stringResource(R.string.first_clear_rewards)
+    is AutoBattle.ExitReason.FreeQuestComplete -> stringResource(R.string.free_quest_complete, count)
+    AutoBattle.ExitReason.FreeQuestNavigationFailed -> stringResource(R.string.free_quest_navigation_failed)
     AutoBattle.ExitReason.Paused -> stringResource(R.string.script_paused)
     AutoBattle.ExitReason.StopAfterThisRun -> stringResource(R.string.stop_after_this_run)
     AutoBattle.ExitReason.OutOfCommandSpells -> stringResource(id = R.string.p_stop_on_out_of_command_spell)

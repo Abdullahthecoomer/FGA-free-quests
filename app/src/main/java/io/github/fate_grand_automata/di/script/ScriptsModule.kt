@@ -6,6 +6,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import io.github.fate_grand_automata.accessibility.AccessibilityGestures
 import io.github.fate_grand_automata.imaging.TesseractOcrService
+import io.github.fate_grand_automata.imaging.FreeQuestMapScreenImpl
+import io.github.fate_grand_automata.scripts.modules.FreeQuestMapScreen
 import io.github.fate_grand_automata.scripts.FgoAutomataApi
 import io.github.fate_grand_automata.scripts.FgoGameAreaManager
 import io.github.fate_grand_automata.scripts.IFgoAutomataApi
@@ -22,6 +24,9 @@ import io.github.lib_automata.dagger.ScriptScope
 @Module
 @InstallIn(ScriptComponent::class)
 abstract class ScriptsModule {
+    @Binds
+    abstract fun freeQuestMapScreen(screen: FreeQuestMapScreenImpl): FreeQuestMapScreen
+
     companion object {
         @ScriptScope
         @Provides
