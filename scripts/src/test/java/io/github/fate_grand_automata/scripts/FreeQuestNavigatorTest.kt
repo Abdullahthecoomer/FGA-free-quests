@@ -149,6 +149,65 @@ class FreeQuestNavigatorTest {
     }
 
     @Test
+    fun failedBadgeTapRetriesTheIconUsingTheLatestBadgePositionAndSize() {
+        val navigator = FreeQuestNavigator(api, screen)
+        val original = badges.single()
+        val moved = Region(1510, 510, 80, 80)
+        val clicks = mutableListOf<Location>()
+        every { with(api) { any<Location>().click(any()) } } answers {
+            clicks += firstArg<Location>()
+            if (clicks.size == 1) badges = listOf(moved)
+            if (clicks.size == 2) panelOpen = true
+        }
+        navigator.menu() // zoom
+        assertFalse(navigator.menu()) // badge
+        assertFalse(navigator.menu()) // icon
+        assertTrue(navigator.menu()) // panel is open; no more map taps
+        assertEquals(listOf(original.center, Location(1470, 630)), clicks)
+    }
+
+    @Test
+    fun aSecondFallbackMovesFartherIntoTheIconWhenThePanelStillDoesNotOpen() {
+        val navigator = FreeQuestNavigator(api, screen)
+        val clicks = mutableListOf<Location>()
+        every { with(api) { any<Location>().click(any()) } } answers {
+            clicks += firstArg<Location>()
+            if (clicks.size == 3) panelOpen = true
+        }
+        navigator.menu()
+        repeat(3) { assertFalse(navigator.menu()) }
+        assertTrue(navigator.menu())
+        assertEquals(listOf(Location(1530, 530), Location(1470, 590), Location(1440, 590)), clicks)
+    }
+
+    @Test
+    fun aQuestThatNeverOpensStopsAfterTheBadgeTapAndTwoIconFallbacks() {
+        val navigator = FreeQuestNavigator(api, screen)
+        val clicks = mutableListOf<Location>()
+        every { with(api) { any<Location>().click(any()) } } answers {
+            clicks += firstArg<Location>()
+        }
+        navigator.menu()
+        repeat(3) { assertFalse(navigator.menu()) }
+        val exit = assertFailsWith<AutoBattle.BattleExitException> { navigator.menu() }
+        assertIs<AutoBattle.ExitReason.FreeQuestNavigationFailed>(exit.reason)
+        assertEquals(3, clicks.size)
+    }
+
+    @Test
+    fun iconFallbackDoesNotTapOutsideTheMapOrOnTheGamesHud() {
+        for (badge in listOf(
+            Region(10, 400, 60, 60),
+            Region(800, 1040, 60, 60),
+            Region(570, 40, 60, 60),
+            Region(1600, 1380, 60, 60)
+        )) {
+            assertEquals(badge.center, freeLocations.questNodeClick(badge, attempt = 1))
+            assertEquals(null, freeLocations.questNodeClick(badge, attempt = 2))
+        }
+    }
+
+    @Test
     fun apWaitAndQuestSelectionRetriesDoNotCountAsCompletedBattles() {
         val navigator = FreeQuestNavigator(api, screen)
         navigator.menu()

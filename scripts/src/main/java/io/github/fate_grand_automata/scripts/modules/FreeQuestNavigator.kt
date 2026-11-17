@@ -50,6 +50,7 @@ class FreeQuestNavigator @Inject constructor(
             screen.zoomOut()
             returningToMap = false
             selectedNode = null
+            nodeClickAttempts = 0
             battlesAtNode = 0
             emptyScans = 0
             sweep = null
@@ -81,14 +82,15 @@ class FreeQuestNavigator @Inject constructor(
         emptyScans = 0
         sweep = null
         val previous = selectedNode
-        val target = if (previous == null) badges.first().center else {
-            badges.minByOrNull { distanceSquared(it.center, previous) }!!.center.also {
-                if (distanceSquared(it, previous) > 250 * 250) stalled()
+        val target = if (previous == null) badges.first() else {
+            badges.minByOrNull { distanceSquared(it.center, previous) }!!.also {
+                if (distanceSquared(it.center, previous) > 250 * 250) stalled()
             }
         }
         if (++nodeClickAttempts > 3) stalled()
-        selectedNode = target
-        target.click()
+        selectedNode = target.center
+        val click = locations.freeQuest.questNodeClick(target, nodeClickAttempts) ?: stalled()
+        click.click()
         2.seconds.wait()
         return false
     }

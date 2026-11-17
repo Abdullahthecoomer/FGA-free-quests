@@ -35,8 +35,23 @@ class FreeQuestLocations @Inject constructor(
         MapPanDirection.Down -> panTop to panBottom
     }
 
-    fun isMapBadge(badge: Region) =
+    fun questNodeClick(badge: Region, attempt: Int): Location? {
+        val offset = when (attempt) {
+            1 -> Location()
+            // The notification sits above and to the right of the node artwork.
+            2 -> Location(-badge.width, badge.height)
+            3 -> Location(-badge.width * 3 / 2, badge.height)
+            else -> return null
+        }
+        return (badge.center + offset).takeIf { isMapPoint(it) }
+    }
+
+    fun isMapBadge(badge: Region) = isMapPoint(badge.center)
+
+    private fun isMapPoint(point: Location) =
+        point.x in mapRegion.x until mapRegion.right &&
+        point.y in mapRegion.y until mapRegion.bottom &&
         listOf(statusRegion, menuRegion, headerRegion).none { hud ->
-            badge.center.x in hud.x until hud.right && badge.center.y in hud.y until hud.bottom
+            point.x in hud.x until hud.right && point.y in hud.y until hud.bottom
         }
 }

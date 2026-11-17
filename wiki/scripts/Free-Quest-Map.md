@@ -13,6 +13,9 @@ It stays in the currently open map; it does not switch chapters or handle event 
    the whole map cleared. Configure apples as usual; zero refills stops when AP runs out.
 4. Keep the game visible. The script closes any open quest panel, pinches the map out,
    selects an orange notification counter and runs the first quest in that node.
+   If tapping the counter does not open the quest panel, it retries down and left
+   toward the node icon, then slightly farther left. Each retry uses the latest
+   detected badge position and size; retries stop as soon as the panel opens.
    The first quest must be the uncleared Free Quest.
 5. It repeats that quest until FGA recognizes the first-clear reward popup, accepts it,
    rejects any repeat prompt, closes the panel and pinches out again. Each reset uses
